@@ -210,7 +210,7 @@ def extract_audio_segment(url, start_time=30, end_time=45):
         return None
 
 def transcribe_audio(audio_file):
-    """Transcribe audio to text using speech recognition"""
+    """Transcribe audio to text using speech recognition with multiple approaches"""
     try:
         if not SPEECH_RECOGNITION_AVAILABLE:
             return "Speech recognition not available"
@@ -220,59 +220,101 @@ def transcribe_audio(audio_file):
             return "No audio content found"
         
         r = sr.Recognizer()
-        
-        # Try multiple approaches for better transcription
         all_text = []
         
-        # Method 1: Try to transcribe the entire audio at once
-        try:
-            with sr.AudioFile(audio_file) as source:
-                # Adjust for ambient noise with longer duration
-                r.adjust_for_ambient_noise(source, duration=1.0)
-                audio = r.record(source)
-                text = r.recognize_google(audio, language='en-US')
-                if text.strip():
-                    all_text.append(text)
-        except Exception as e:
-            print(f"Full audio transcription failed: {e}")
-        
-        # Method 2: Try with different noise adjustment
-        try:
-            with sr.AudioFile(audio_file) as source:
-                # Try with shorter noise adjustment
-                r.adjust_for_ambient_noise(source, duration=0.5)
-                audio = r.record(source)
-                text = r.recognize_google(audio, language='en-US')
-                if text.strip() and text not in all_text:
-                    all_text.append(text)
-        except Exception as e:
-            print(f"Alternative transcription failed: {e}")
-        
-        # Method 3: Try without noise adjustment
-        try:
-            with sr.AudioFile(audio_file) as source:
-                audio = r.record(source)
-                text = r.recognize_google(audio, language='en-US')
-                if text.strip() and text not in all_text:
-                    all_text.append(text)
-        except Exception as e:
-            print(f"No noise adjustment transcription failed: {e}")
-        
-        # Method 4: Try with minimal noise adjustment
+        # Method 1: Try with minimal noise adjustment (captures beginning better)
         try:
             with sr.AudioFile(audio_file) as source:
                 r.adjust_for_ambient_noise(source, duration=0.1)
                 audio = r.record(source)
                 text = r.recognize_google(audio, language='en-US')
-                if text.strip() and text not in all_text:
+                if text.strip():
                     all_text.append(text)
+                    print(f"Minimal noise (0.1s): {text}")
         except Exception as e:
             print(f"Minimal noise transcription failed: {e}")
+        
+        # Method 2: Try without any noise adjustment
+        try:
+            with sr.AudioFile(audio_file) as source:
+                audio = r.record(source)
+                text = r.recognize_google(audio, language='en-US')
+                if text.strip() and text not in all_text:
+                    all_text.append(text)
+                    print(f"No noise adjustment: {text}")
+        except Exception as e:
+            print(f"No noise transcription failed: {e}")
+        
+        # Method 3: Try with very short noise adjustment
+        try:
+            with sr.AudioFile(audio_file) as source:
+                r.adjust_for_ambient_noise(source, duration=0.2)
+                audio = r.record(source)
+                text = r.recognize_google(audio, language='en-US')
+                if text.strip() and text not in all_text:
+                    all_text.append(text)
+                    print(f"Short noise (0.2s): {text}")
+        except Exception as e:
+            print(f"Short noise transcription failed: {e}")
+        
+        # Method 4: Try with different language models
+        for language in ['en-US', 'en-GB']:
+            try:
+                with sr.AudioFile(audio_file) as source:
+                    r.adjust_for_ambient_noise(source, duration=0.1)
+                    audio = r.record(source)
+                    text = r.recognize_google(audio, language=language)
+                    if text.strip() and text not in all_text:
+                        all_text.append(text)
+                        print(f"Language {language}: {text}")
+            except Exception as e:
+                print(f"Language {language} transcription failed: {e}")
+        
+        # Method 5: Try with different energy threshold
+        try:
+            with sr.AudioFile(audio_file) as source:
+                r.adjust_for_ambient_noise(source, duration=0.1)
+                r.energy_threshold = 300  # Lower threshold for quieter speech
+                audio = r.record(source)
+                text = r.recognize_google(audio, language='en-US')
+                if text.strip() and text not in all_text:
+                    all_text.append(text)
+                    print(f"Lower energy threshold: {text}")
+        except Exception as e:
+            print(f"Lower energy threshold failed: {e}")
+        
+        # Method 6: Try with higher energy threshold
+        try:
+            with sr.AudioFile(audio_file) as source:
+                r.adjust_for_ambient_noise(source, duration=0.1)
+                r.energy_threshold = 4000  # Higher threshold for louder speech
+                audio = r.record(source)
+                text = r.recognize_google(audio, language='en-US')
+                if text.strip() and text not in all_text:
+                    all_text.append(text)
+                    print(f"Higher energy threshold: {text}")
+        except Exception as e:
+            print(f"Higher energy threshold failed: {e}")
+        
+        # Method 7: Try with dynamic energy threshold
+        try:
+            with sr.AudioFile(audio_file) as source:
+                r.adjust_for_ambient_noise(source, duration=0.1)
+                r.dynamic_energy_threshold = True
+                audio = r.record(source)
+                text = r.recognize_google(audio, language='en-US')
+                if text.strip() and text not in all_text:
+                    all_text.append(text)
+                    print(f"Dynamic energy threshold: {text}")
+        except Exception as e:
+            print(f"Dynamic energy threshold failed: {e}")
         
         # Return the best result
         if all_text:
             # Return the longest transcription (most likely to be complete)
-            return max(all_text, key=len)
+            best_text = max(all_text, key=len)
+            print(f"Selected best transcription: {best_text}")
+            return best_text
         else:
             return "No speech detected in the audio"
             
