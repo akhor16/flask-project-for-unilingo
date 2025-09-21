@@ -410,6 +410,15 @@ def index():
                          current_url=data.get('current_video_url', ''),
                          video_info=data.get('video_info', {}))
 
+@app.route('/health')
+def health():
+    """Health check endpoint for Railway"""
+    return jsonify({
+        "status": "healthy", 
+        "message": "Video Processing App is running",
+        "timestamp": "2025-01-20"
+    })
+
 @app.route('/submit_url', methods=['POST'])
 def submit_url():
     """Handle video URL submission"""
