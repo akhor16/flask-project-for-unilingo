@@ -258,6 +258,17 @@ def transcribe_audio(audio_file):
         except Exception as e:
             print(f"No noise adjustment transcription failed: {e}")
         
+        # Method 4: Try with minimal noise adjustment
+        try:
+            with sr.AudioFile(audio_file) as source:
+                r.adjust_for_ambient_noise(source, duration=0.1)
+                audio = r.record(source)
+                text = r.recognize_google(audio, language='en-US')
+                if text.strip() and text not in all_text:
+                    all_text.append(text)
+        except Exception as e:
+            print(f"Minimal noise transcription failed: {e}")
+        
         # Return the best result
         if all_text:
             # Return the longest transcription (most likely to be complete)
@@ -434,7 +445,7 @@ def perform_ocr(image_file):
     """Perform OCR on image"""
     try:
         if not PYTESSERACT_AVAILABLE or not PIL_AVAILABLE:
-            return "OCR not available on this platform"
+            return "OCR not available on this platform - Tesseract not installed"
             
         # Try to set tesseract path for different systems
         import platform
@@ -456,6 +467,12 @@ def perform_ocr(image_file):
                 pytesseract.pytesseract.tesseract_cmd = 'tesseract'
             except:
                 pass
+        
+        # Test if tesseract is actually available
+        try:
+            pytesseract.get_tesseract_version()
+        except Exception as e:
+            return f"Tesseract not properly installed: {str(e)}"
         
         image = Image.open(image_file)
         text = pytesseract.image_to_string(image)
