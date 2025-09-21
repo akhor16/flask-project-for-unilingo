@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Processing App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            padding: 30px;
+            border-radius: 15px;
+            background: #f8f9fa;
+            border-left: 5px solid #4facfe;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            font-weight: 500;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .input-group input {
+            flex: 1;
+            min-width: 300px;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(86, 171, 47, 0.3);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(240, 147, 251, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .info-display {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border: 1px solid #e1e5e9;
+        }
+
+        .info-display h3 {
+            color: #4facfe;
+            margin-bottom: 10px;
+        }
+
+        .info-display p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .current-url {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #4facfe;
+        }
+
+        .current-url strong {
+            color: #4facfe;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4facfe;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .audio-player {
+            margin: 15px 0;
+        }
+
+        .audio-player audio {
+            width: 100%;
+            border-radius: 10px;
+        }
+
+        .translation-result {
+            background: #f0f8ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #4facfe;
+        }
+
+        .translation-result h4 {
+            color: #4facfe;
+            margin-bottom: 10px;
+        }
+
+        .ocr-result {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            border: 1px solid #ddd;
+        }
+
+        .image-preview {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin: 15px 0;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+
+        .error {
+            background: #ffe6e6;
+            color: #d63031;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #d63031;
+        }
+
+        .success {
+            background: #e6ffe6;
+            color: #00b894;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #00b894;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .input-group {
+                flex-direction: column;
+            }
+            
+            .input-group input {
+                min-width: auto;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎥 Video Processing App</h1>
+            <p>Process videos with audio extraction, translation, and OCR capabilities</p>
+        </div>
+
+        <div class="content">
+            <!-- Checkpoint 1: Video URL Input -->
+            <div class="section">
+                <h2>📹 Checkpoint 1: Video URL Input</h2>
+                <div class="input-group">
+                    <input type="url" id="videoUrl" placeholder="Paste your MP4 video URL here..." value="{{ current_url }}">
+                    <button class="btn btn-primary" onclick="submitUrl()">Submit URL</button>
+                </div>
+                
+                <div class="info-display" style="margin-top: 15px;">
+                    <h3>📝 Working Video URLs for Testing:</h3>
+                    <p><strong>❌ YouTube URLs don't work</strong> - they need special handling</p>
+                    <p><strong>✅ Try these working URLs:</strong></p>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li><code>https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4</code></li>
+                        <li><code>https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4</code></li>
+                        <li><code>https://file-examples.com/storage/fe68c8b7a0b7b7b7b7b7b7b/2017/10/file_example_MP4_480_1_5MG.mp4</code></li>
+                    </ul>
+                    <p><strong>💡 Or upload your own MP4 to:</strong> Google Drive, Dropbox, or any file sharing service</p>
+                </div>
+                
+                {% if current_url %}
+                <div class="current-url">
+                    <strong>Current Video URL:</strong><br>
+                    <span>{{ current_url }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Checkpoint 2: Video Information -->
+            <div class="section">
+                <h2>📊 Checkpoint 2: Video Information</h2>
+                <div id="videoInfo">
+                {% if video_info.duration %}
+                <div class="info-display">
+                    <h3>Duration</h3>
+                    <p>{{ "%.2f"|format(video_info.duration) }} seconds</p>
+                </div>
+                <div class="info-display">
+                    <h3>Height</h3>
+                    <p>{{ video_info.height }} pixels</p>
+                </div>
+                {% elif video_info.error %}
+                <div class="error">
+                    <strong>Error:</strong> {{ video_info.error }}
+                </div>
+                {% else %}
+                <p>Submit a video URL to see information</p>
+                {% endif %}
+                </div>
+            </div>
+
+            <!-- Checkpoint 3: Audio Playback and Download -->
+            <div class="section">
+                <h2>🎵 Checkpoint 3: Audio Playback (0:30-0:45)</h2>
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="playAudio()">Play Audio</button>
+                    <button class="btn btn-success" onclick="downloadAudio()">Download Audio</button>
+                </div>
+                <div id="audioPlayer" class="audio-player"></div>
+            </div>
+
+            <!-- Checkpoint 4: Translation -->
+            <div class="section">
+                <h2>🌍 Checkpoint 4: Audio Translation</h2>
+                <button class="btn btn-warning" onclick="translateAudio()">Translate to Spanish</button>
+                <div id="translationResult" class="translation-result" style="display: none;">
+                    <h4>Translation Result:</h4>
+                    <p><strong>Original:</strong> <span id="originalText"></span></p>
+                    <p><strong>Spanish:</strong> <span id="spanishText"></span></p>
+                </div>
+            </div>
+
+            <!-- Checkpoint 5: Spanish Text-to-Speech -->
+            <div class="section">
+                <h2>🗣️ Checkpoint 5: Spanish Speech</h2>
+                <button class="btn btn-primary" onclick="speakSpanish()">Speak Spanish Translation</button>
+                <div id="spanishAudioPlayer" class="audio-player"></div>
+            </div>
+
+            <!-- Checkpoint 6: First Frame -->
+            <div class="section">
+                <h2>🖼️ Checkpoint 6: First Frame</h2>
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="showFirstFrame()">Show First Frame</button>
+                    <button class="btn btn-success" onclick="downloadFrame()">Download Frame</button>
+                </div>
+                <div id="framePreview"></div>
+            </div>
+
+            <!-- Checkpoint 7: OCR -->
+            <div class="section">
+                <h2>📝 Checkpoint 7: OCR Text Detection</h2>
+                <button class="btn btn-warning" onclick="performOCR()">Extract Text from Frame</button>
+                <div id="ocrResult" class="ocr-result" style="display: none;"></div>
+            </div>
+
+            <!-- Loading indicator -->
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Processing...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showLoading() {
+            document.getElementById('loading').classList.add('show');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').classList.remove('show');
+        }
+
+        function showError(message) {
+            hideLoading();
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.textContent = message;
+            document.querySelector('.content').appendChild(errorDiv);
+            setTimeout(() => errorDiv.remove(), 5000);
+        }
+
+        function showSuccess(message) {
+            hideLoading();
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success';
+            successDiv.textContent = message;
+            document.querySelector('.content').appendChild(successDiv);
+            setTimeout(() => successDiv.remove(), 3000);
+        }
+
+        async function submitUrl() {
+            const url = document.getElementById('videoUrl').value.trim();
+            if (!url) {
+                showError('Please enter a video URL');
+                return;
+            }
+
+            showLoading();
+            
+            try {
+                const response = await fetch('/submit_url', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: url })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess('Video URL submitted successfully!');
+                    updateVideoInfo(data.video_info);
+                    location.reload(); // Reload to show current URL
+                } else {
+                    showError(data.error || 'Failed to submit URL');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            }
+        }
+
+        function updateVideoInfo(info) {
+            const infoDiv = document.getElementById('videoInfo');
+            infoDiv.innerHTML = `
+                <div class="info-display">
+                    <h3>Duration</h3>
+                    <p>${info.duration.toFixed(2)} seconds</p>
+                </div>
+                <div class="info-display">
+                    <h3>Height</h3>
+                    <p>${info.height} pixels</p>
+                </div>
+            `;
+        }
+
+        async function playAudio() {
+            showLoading();
+            
+            try {
+                const response = await fetch('/play_audio');
+                if (response.ok) {
+                    const audioBlob = await response.blob();
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    
+                    const audioPlayer = document.getElementById('audioPlayer');
+                    audioPlayer.innerHTML = `<audio controls><source src="${audioUrl}" type="audio/mpeg"></audio>`;
+                    
+                    hideLoading();
+                    showSuccess('Audio loaded successfully!');
+                } else {
+                    const error = await response.json();
+                    showError(error.error || 'Failed to load audio');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            }
+        }
+
+        async function downloadAudio() {
+            showLoading();
+            
+            try {
+                const response = await fetch('/download_audio');
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'audio_segment.mp3';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    
+                    hideLoading();
+                    showSuccess('Audio download started!');
+                } else {
+                    const error = await response.json();
+                    showError(error.error || 'Failed to download audio');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            }
+        }
+
+        async function translateAudio() {
+            showLoading();
+            
+            try {
+                const response = await fetch('/translate_audio');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('originalText').textContent = data.transcribed;
+                    document.getElementById('spanishText').textContent = data.translated;
+                    document.getElementById('translationResult').style.display = 'block';
+                    
+                    hideLoading();
+                    showSuccess('Translation completed!');
+                } else {
+                    showError(data.error || 'Failed to translate audio');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            }
+        }
+
+        async function speakSpanish() {
+            showLoading();
+            
+            try {
+                const response = await fetch('/speak_spanish');
+                if (response.ok) {
+                    const audioBlob = await response.blob();
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    
+                    const audioPlayer = document.getElementById('spanishAudioPlayer');
+                    audioPlayer.innerHTML = `<audio controls><source src="${audioUrl}" type="audio/mpeg"></audio>`;
+                    
+                    hideLoading();
+                    showSuccess('Spanish speech generated!');
+                } else {
+                    const error = await response.json();
+                    showError(error.error || 'Failed to generate speech');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            }
+        }
+
+        async function showFirstFrame() {
+            showLoading();
+            
+            try {
+                const response = await fetch('/first_frame');
+                if (response.ok) {
+                    const imageBlob = await response.blob();
+                    const imageUrl = URL.createObjectURL(imageBlob);
+                    
+                    const framePreview = document.getElementById('framePreview');
+                    framePreview.innerHTML = `<img src="${imageUrl}" alt="First Frame" class="image-preview">`;
+                    
+                    hideLoading();
+                    showSuccess('First frame loaded!');
+                } else {
+                    const error = await response.json();
+                    showError(error.error || 'Failed to load first frame');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            }
+        }
+
+        async function downloadFrame() {
+            showLoading();
+            
+            try {
+                const response = await fetch('/download_frame');
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'first_frame.png';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    
+                    hideLoading();
+                    showSuccess('Frame download started!');
+                } else {
+                    const error = await response.json();
+                    showError(error.error || 'Failed to download frame');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            }
+        }
+
+        async function performOCR() {
+            showLoading();
+            
+            try {
+                const response = await fetch('/ocr_text');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const ocrResult = document.getElementById('ocrResult');
+                    ocrResult.textContent = data.ocr_text || 'No text detected';
+                    ocrResult.style.display = 'block';
+                    
+                    hideLoading();
+                    showSuccess('OCR completed!');
+                } else {
+                    showError(data.error || 'Failed to perform OCR');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
