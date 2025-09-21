@@ -2,17 +2,54 @@ from flask import Flask, render_template, request, jsonify, send_file
 import os
 import json
 import requests
-import cv2
-import numpy as np
-from moviepy.editor import VideoFileClip
 import tempfile
 import base64
 from io import BytesIO
-from PIL import Image
-import speech_recognition as sr
-from gtts import gTTS
-import pytesseract
 import uuid
+
+# Import heavy dependencies with error handling
+try:
+    import cv2
+    import numpy as np
+    CV2_AVAILABLE = True
+except ImportError as e:
+    print(f"OpenCV not available: {e}")
+    CV2_AVAILABLE = False
+
+try:
+    from moviepy.editor import VideoFileClip
+    MOVIEPY_AVAILABLE = True
+except ImportError as e:
+    print(f"MoviePy not available: {e}")
+    MOVIEPY_AVAILABLE = False
+
+try:
+    from PIL import Image
+    PIL_AVAILABLE = True
+except ImportError as e:
+    print(f"PIL not available: {e}")
+    PIL_AVAILABLE = False
+
+try:
+    import speech_recognition as sr
+    SPEECH_RECOGNITION_AVAILABLE = True
+except ImportError as e:
+    print(f"SpeechRecognition not available: {e}")
+    SPEECH_RECOGNITION_AVAILABLE = False
+
+try:
+    from gtts import gTTS
+    GTTS_AVAILABLE = True
+except ImportError as e:
+    print(f"gTTS not available: {e}")
+    GTTS_AVAILABLE = False
+
+try:
+    import pytesseract
+    PYTESSERACT_AVAILABLE = True
+except ImportError as e:
+    print(f"pytesseract not available: {e}")
+    PYTESSERACT_AVAILABLE = False
 
 app = Flask(__name__)
 
@@ -43,6 +80,9 @@ def get_video_info(url):
         # Check if it's a YouTube URL
         if is_youtube_url(url):
             return {"duration": 0, "height": 0, "error": "YouTube URLs are not supported. Please use direct MP4 video URLs or upload your video to a file sharing service."}
+        
+        if not CV2_AVAILABLE:
+            return {"duration": 0, "height": 0, "error": "Video processing not available - OpenCV not installed"}
         
         # Download video with proper headers and timeout
         headers = {
@@ -105,6 +145,9 @@ def get_video_info(url):
 def extract_audio_segment(url, start_time=30, end_time=45):
     """Extract audio segment from video"""
     try:
+        if not MOVIEPY_AVAILABLE:
+            return None
+            
         # Download video with proper headers and timeout
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -169,6 +212,9 @@ def extract_audio_segment(url, start_time=30, end_time=45):
 def transcribe_audio(audio_file):
     """Transcribe audio to text using speech recognition"""
     try:
+        if not SPEECH_RECOGNITION_AVAILABLE:
+            return "Speech recognition not available"
+            
         # Check if audio file exists and has content
         if not os.path.exists(audio_file) or os.path.getsize(audio_file) == 0:
             return "No audio content found"
@@ -253,6 +299,9 @@ def translate_text(text, target_language='es'):
 def text_to_speech(text, language='es'):
     """Convert text to speech"""
     try:
+        if not GTTS_AVAILABLE:
+            return None
+            
         tts = gTTS(text=text, lang=language, slow=False)
         audio_file = tempfile.NamedTemporaryFile(delete=False, suffix='.mp3')
         tts.save(audio_file.name)
@@ -264,6 +313,9 @@ def text_to_speech(text, language='es'):
 def extract_first_frame(url):
     """Extract first frame from video"""
     try:
+        if not CV2_AVAILABLE or not PIL_AVAILABLE:
+            return None
+            
         # Download video with proper headers and timeout
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -381,10 +433,14 @@ def extract_multiple_frames_for_ocr(url, num_frames=5):
 def perform_ocr(image_file):
     """Perform OCR on image"""
     try:
-        # Try to set tesseract path for Windows
+        if not PYTESSERACT_AVAILABLE or not PIL_AVAILABLE:
+            return "OCR not available on this platform"
+            
+        # Try to set tesseract path for different systems
         import platform
-        if platform.system() == "Windows":
-            # Common Windows installation paths
+        system = platform.system()
+        
+        if system == "Windows":
             possible_paths = [
                 r"C:\Program Files\Tesseract-OCR\tesseract.exe",
                 r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
@@ -394,6 +450,12 @@ def perform_ocr(image_file):
                 if os.path.exists(path):
                     pytesseract.pytesseract.tesseract_cmd = path
                     break
+        elif system == "Linux":
+            # For deployment platforms like Railway/Heroku
+            try:
+                pytesseract.pytesseract.tesseract_cmd = 'tesseract'
+            except:
+                pass
         
         image = Image.open(image_file)
         text = pytesseract.image_to_string(image)
@@ -416,7 +478,14 @@ def health():
     return jsonify({
         "status": "healthy", 
         "message": "Video Processing App is running",
-        "timestamp": "2025-01-20"
+        "dependencies": {
+            "opencv": CV2_AVAILABLE,
+            "moviepy": MOVIEPY_AVAILABLE,
+            "pil": PIL_AVAILABLE,
+            "speech_recognition": SPEECH_RECOGNITION_AVAILABLE,
+            "gtts": GTTS_AVAILABLE,
+            "pytesseract": PYTESSERACT_AVAILABLE
+        }
     })
 
 @app.route('/submit_url', methods=['POST'])

@@ -1,6 +1,6 @@
 Flask==3.0.0
 requests==2.31.0
-opencv-python==4.9.0.80
+opencv-python-headless==4.9.0.80
 moviepy==1.0.3
 Pillow==10.1.0
 SpeechRecognition==3.10.0
